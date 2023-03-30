@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -117,6 +118,23 @@ func (suite *EventDispatcherTestSuite) TestEventDispatcher_Has() {
 	assert.True(suite.T(), suite.eventDispatcher.Has(suite.event.GetName(), &suite.handler))
 	assert.True(suite.T(), suite.eventDispatcher.Has(suite.event.GetName(), &suite.handler2))
 	assert.False(suite.T(), suite.eventDispatcher.Has(suite.event.GetName(), &suite.handle3))
+}
+
+type MockHandle struct {
+	mock.Mock
+}
+
+func (m *MockHandle) Handle(event EventInterface) {
+	m.Called(event)
+}
+
+func(suite *EventDispatcherTestSuite) TestEventDispatcher_Dispatch() {
+	eh := &MockHandle{}
+	eh.On("Handle", &suite.event)
+	suite.eventDispatcher.Register(suite.event.GetName(), eh)
+	suite.eventDispatcher.Dispatch(&suite.event)
+	eh.AssertExpectations(suite.T())
+	eh.AssertNumberOfCalls(suite.T(), "Handle", 1)
 }
 
 
